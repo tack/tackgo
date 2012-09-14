@@ -2,8 +2,11 @@ package main
 
 import (
 	"fmt"
-	"tackgo/structures"
 	"testing"
+	"crypto/rand"
+	"crypto/elliptic"
+	"crypto/ecdsa"
+	"tackgo/structures"
 )
 
 func TestStructures(test *testing.T) {
@@ -31,6 +34,12 @@ target_hash     = 32b64b66727a2063e4066f3b958cb0aa
 	
 	// Test verify
 	if !t.Verify() {test.Fatal("bad verify")}
+
+	// Test sign and verify
+	curve := elliptic.P256()
+	privKey, err := ecdsa.GenerateKey(curve, rand.Reader)
+	if err=t.Sign(privKey); err != nil {test.Fatal(err)}
+	if !t.Verify() {test.Fatal("bad verify #2")}
 
 	// Test serialize and reparse
 	s = t.SerializeAsPem()

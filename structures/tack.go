@@ -8,6 +8,7 @@ import (
 	"crypto/elliptic"
 	"crypto/ecdsa"
 	"crypto/sha256"
+	"crypto/rand"
 	"tackgo/util"	
 )
 
@@ -58,15 +59,19 @@ func NewTackFromPem(s string) (*Tack, error) {
 	return NewTackFromBytes(b)
 }
 
-func (t *Tack) Serialize() []byte {
+func (t *Tack) serializePreSig() []byte {
 	buf := bytes.NewBuffer(make([]byte, 0, TACK_LENGTH))
 	buf.Write(t.PublicKey)
 	buf.WriteByte(t.MinGeneration)
 	buf.WriteByte(t.Generation)
 	binary.Write(buf, binary.BigEndian, t.Expiration)
 	buf.Write(t.TargetHash)
-	buf.Write(t.Signature)
 	return buf.Bytes()
+}
+
+func (t *Tack) Serialize() []byte {
+	b := t.serializePreSig()
+	return append(b, t.Signature...)
 }
 
 func (t *Tack) SerializeAsPem() string {
@@ -94,6 +99,35 @@ target_hash     = %s
 	return s
 }
 
+func (t *Tack) hashForSig() []byte {
+	b := t.serializePreSig()
+	hash := sha256.New()
+	hash.Write([]byte("tack_sig"))
+	hash.Write(b)
+	return hash.Sum(nil)	
+}
+
+func (t *Tack) Sign(privKey *ecdsa.PrivateKey) error {
+	x, y := privKey.X, privKey.Y
+	xBytes := x.Bytes()
+	yBytes := y.Bytes()
+	xPad := PUBKEY_LENGTH/2 - len(xBytes)
+	yPad := PUBKEY_LENGTH/2 - len(yBytes)
+	copy(t.PublicKey[xPad : PUBKEY_LENGTH/2], xBytes)
+	copy(t.PublicKey[PUBKEY_LENGTH/2 + yPad : ], yBytes)
+
+	r, s, err := ecdsa.Sign(rand.Reader, privKey, t.hashForSig())
+	if (err != nil) {return err}
+
+	rBytes := r.Bytes()
+	sBytes := s.Bytes()
+	rPad := SIG_LENGTH/2 - len(rBytes)
+	sPad := SIG_LENGTH/2 - len(sBytes)	
+	copy(t.Signature[rPad : SIG_LENGTH/2], rBytes)
+	copy(t.Signature[SIG_LENGTH/2 + sPad : ], sBytes)
+	return nil
+}
+
 func (t *Tack) Verify() bool {
 	curve := elliptic.P256()
 	x, y := elliptic.Unmarshal(curve, append([]byte{4}, t.PublicKey...)) 
@@ -102,12 +136,6 @@ func (t *Tack) Verify() bool {
 	var r, s big.Int
 	r.SetBytes(t.Signature[ : SIG_LENGTH/2])
 	s.SetBytes(t.Signature[SIG_LENGTH/2 : ])
-	
-	b := t.Serialize()
-	hash := sha256.New()
-	hash.Write([]byte("tack_sig"))
-	hash.Write(b[ : len(b) - SIG_LENGTH])
-	hresult := hash.Sum(nil)
-	
-	return ecdsa.Verify(&pubKey, hresult, &r, &s) 
+	return ecdsa.Verify(&pubKey, t.hashForSig(), &r, &s) 
 }
+
