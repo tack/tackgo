@@ -75,3 +75,7 @@ func (te *TackExtension) String() string {
 	s = s + fmt.Sprintf("activation_flags = %d\n", te.ActivationFlags)
 	return s
 }
+
+func (te *TackExtension) Len() int {
+	return 3 + len(te.Tacks)*TACK_LENGTH
+}

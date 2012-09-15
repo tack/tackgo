@@ -29,12 +29,12 @@ type Tack struct {
 func NewTack(publicKey []byte, minGeneration uint8, generation uint8,
 	 		expiration uint32, targetHash []byte, signature []byte) (*Tack, error) {
 	t := Tack{}
-	t.PublicKey = append(t.PublicKey, publicKey[ : PUBKEY_LENGTH]...)
+	t.PublicKey = publicKey[ : PUBKEY_LENGTH]
 	t.MinGeneration = minGeneration
 	t.Generation = generation
 	t.Expiration = expiration
-	t.TargetHash = append(t.TargetHash, targetHash[ : HASH_LENGTH]...)
-	t.Signature = append(t.Signature, signature[ : SIG_LENGTH]...)
+	t.TargetHash = targetHash[ : HASH_LENGTH]
+	t.Signature = signature[ : SIG_LENGTH]
 	return &t, nil
 }
 
@@ -42,14 +42,13 @@ func NewTackFromBytes(b []byte) (*Tack, error) {
 	if len(b) != TACK_LENGTH {
 		return nil, fmt.Errorf("Tack is the wrong size: %d", len(b))
 	}
-	buf := bytes.NewBuffer(b)
 	t := Tack{}
-	t.PublicKey = append(t.PublicKey, buf.Next(PUBKEY_LENGTH)...)
-	t.MinGeneration, _ = buf.ReadByte()
-	t.Generation, _ = buf.ReadByte()
-	binary.Read(buf, binary.BigEndian, &t.Expiration)
-	t.TargetHash = append(t.TargetHash, buf.Next(HASH_LENGTH)...)
-	t.Signature = append(t.Signature, buf.Next(SIG_LENGTH)...)
+	t.PublicKey = b[: PUBKEY_LENGTH]
+	t.MinGeneration = b[64]
+	t.Generation = b[65]
+	t.Expiration = uint32(b[66])<<24 | uint32(b[67])<<16 | uint32(b[68])<<8 | uint32(b[69])
+	t.TargetHash = b[70 : 70 + HASH_LENGTH]
+	t.Signature = b[102 : 102 + SIG_LENGTH]
 	return &t, nil
 }
 
