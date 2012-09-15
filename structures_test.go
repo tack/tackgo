@@ -6,7 +6,7 @@ import (
 	"crypto/rand"
 	"crypto/elliptic"
 	"crypto/ecdsa"
-	"tackgo/structures"
+	"tackgo/tack"
 )
 
 func TestStructures(test *testing.T) {
@@ -19,7 +19,7 @@ iHRzHZWHzDEj0rL1BJQ2/xumpCePIyywLQB8D9z3/X8k7P8jItKI2TEy1201W5dM
 Hcip7C5zr98kfKjlw/UGG2y86KdCzQ==
 -----END TACK-----
 `
-	t, err := structures.NewTackFromPem(tackStr)	
+	t, err := tack.NewTackFromPem(tackStr)	
 	if err != nil {test.Fatal(err)}
 	
 	// Test printing
@@ -43,7 +43,7 @@ target_hash     = 32b64b66727a2063e4066f3b958cb0aa
 
 	// Test serialize and reparse
 	s = t.SerializeAsPem()
-	t2, err := structures.NewTackFromPem(s)
+	t2, err := tack.NewTackFromPem(s)
 	if err != nil {test.Fatal(err)}
 	s2 := t2.SerializeAsPem()
 	if s != s2 {test.Fatal("tack string mismatch")}
@@ -60,7 +60,7 @@ S2ZyeiBj5AZvO5WMsKruV2pezv2VM5m7iHRzHZWH5UeQpow6aJweikYRq6NNPA7r
 29ok8aGVudp5SB7o5Va8VGPysFjrcFgZSnx5K22yAKlhWqTbDNt+fOT+ZrPM+gA=
 -----END TACK EXTENSION-----
 `	
-	te, err := structures.NewTackExtensionFromPem(tackExtStr)
+	te, err := tack.NewTackExtensionFromPem(tackExtStr)
 	if err != nil {test.Fatal(err)}
 	
 	s = fmt.Sprint(te)
@@ -80,8 +80,8 @@ activation_flags = 1
 ` {test.Fatal("tack ext print mismatch")}
 
 	s = te.SerializeAsPem()
-	te2, err := structures.NewTackExtensionFromPem(s)
+	te2, err := tack.NewTackExtensionFromPem(s)
 	if err != nil {test.Fatal(err)}
 	s2 = te2.SerializeAsPem()
-	if s != s2 {test.Fatal("tack ext string mismatch")}
+	if s != s2 {test.Fatal("tack ext string mismatch")}	
 }
