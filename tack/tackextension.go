@@ -1,10 +1,10 @@
-package structures
+package tack
 
 import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"tackgo/util"
+	"tackgo/tack/util"
 )
 
 type TackExtension struct {

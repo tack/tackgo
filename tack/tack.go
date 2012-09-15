@@ -1,4 +1,4 @@
-package structures
+package tack
 
 import (
 	"bytes"
@@ -9,7 +9,7 @@ import (
 	"crypto/ecdsa"
 	"crypto/sha256"
 	"crypto/rand"
-	"tackgo/util"	
+	"tackgo/tack/util"	
 )
 
 const TACK_LENGTH = 166
@@ -89,12 +89,8 @@ min_generation  = %d
 generation      = %d
 expiration      = %s
 target_hash     = %s
-`,
-	t.KeyFingerprint(),
-    t.MinGeneration,
-    t.Generation,
-    util.MinutesToString(t.Expiration),
-    util.BytesToHexString(t.TargetHash))
+`, t.KeyFingerprint(), t.MinGeneration, t.Generation,
+   util.MinutesToString(t.Expiration), util.BytesToHexString(t.TargetHash))
 	return s
 }
 
