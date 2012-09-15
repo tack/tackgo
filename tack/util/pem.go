@@ -2,9 +2,9 @@ package util
 
 import (
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"strings"
-	"errors"
 )
 
 func Pem(b []uint8, name string) string {
@@ -25,7 +25,7 @@ func Pem(b []uint8, name string) string {
 func Depem(s string, name string) ([]byte, error) {
 	prefix := fmt.Sprintf("-----BEGIN %s-----", name)
 	postfix := fmt.Sprintf("-----END %s-----", name)
-	
+
 	s = strings.Replace(s, "\n", "", -1)
 	start := strings.Index(s, prefix)
 	if start == -1 {
@@ -38,7 +38,7 @@ func Depem(s string, name string) ([]byte, error) {
 	if end < start {
 		return nil, errors.New("PEM postfix before prefix")
 	}
-	
-	body := s[start + len(prefix) : end]
+
+	body := s[start+len(prefix) : end]
 	return base64.StdEncoding.DecodeString(body)
 }

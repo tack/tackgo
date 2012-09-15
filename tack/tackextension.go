@@ -3,6 +3,7 @@ package tack
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"tackgo/tack/util"
 )
@@ -13,10 +14,16 @@ type TackExtension struct {
 }
 
 func NewTackExtension(tacks []*Tack, activationFlags uint8) (*TackExtension, error) {
-	te:= TackExtension{}
-	copy(te.Tacks[:], tacks)
-	te.ActivationFlags = activationFlags
-	return &te, nil
+	if len(tacks) == 0 {
+		return nil, errors.New("No tacks for TackExtension")
+	}
+	if len(tacks) > 2 {
+		return nil, fmt.Errorf("Too many tacks for TackExtension: %d", len(tacks))
+	}
+	if activationFlags > 3 {
+		return nil, fmt.Errorf("Bad activationFlags: %d", activationFlags)
+	}
+	return &TackExtension{tacks, activationFlags}, nil
 }
 
 func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
@@ -34,7 +41,9 @@ func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
 	te := TackExtension{}
 	for {
 		tack, err := NewTackFromBytes(buf.Next(TACK_LENGTH))
-		if err != nil {return nil, err}
+		if err != nil {
+			return nil, err
+		}
 
 		te.Tacks = append(te.Tacks, tack)
 		if buf.Len() == 1 {
@@ -42,12 +51,18 @@ func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
 		}
 	}
 	te.ActivationFlags = b[0]
+	if te.ActivationFlags > 3 {
+		return nil, fmt.Errorf("Bad ActivationFlags: %d", te.ActivationFlags)
+	}
+
 	return &te, nil
 }
 
 func NewTackExtensionFromPem(s string) (*TackExtension, error) {
 	b, err := util.Depem(s, "TACK EXTENSION")
-	if err != nil {return nil, err}
+	if err != nil {
+		return nil, err
+	}
 	return NewTackExtensionFromBytes(b)
 }
 
@@ -70,7 +85,7 @@ func (te *TackExtension) SerializeAsPem() string {
 func (te *TackExtension) String() string {
 	s := ""
 	for _, t := range te.Tacks {
-		s = s + t.String() 
+		s = s + t.String()
 	}
 	s = s + fmt.Sprintf("activation_flags = %d\n", te.ActivationFlags)
 	return s
