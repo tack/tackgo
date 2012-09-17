@@ -16,6 +16,7 @@ import (
 	"net"
 	"sync"
 	"time"
+	"tackgo/tack"
 )
 
 // A Conn represents a secured connection.
@@ -39,6 +40,9 @@ type Conn struct {
 	verifiedChains [][]*x509.Certificate
 	// serverName contains the server name indicated by the client, if any.
 	serverName string
+
+	// tackExtension contains the TackExtension indicated by the server, if any.
+	tackExtension     *tack.TackExtension
 
 	clientProtocol         string
 	clientProtocolFallback bool
@@ -824,6 +828,7 @@ func (c *Conn) ConnectionState() ConnectionState {
 		state.PeerCertificates = c.peerCertificates
 		state.VerifiedChains = c.verifiedChains
 		state.ServerName = c.serverName
+		state.TackExtension = c.tackExtension
 	}
 
 	return state

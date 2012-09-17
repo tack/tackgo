@@ -524,6 +524,7 @@ func (m *serverHelloMsg) unmarshal(data []byte) bool {
 			}
 			m.ocspStapling = true
 		case extensionTackExt:
+			m.tackExt = true
 			m.tackExtBytes = append(m.tackExtBytes, data...)			
 		}
 		data = data[length:]

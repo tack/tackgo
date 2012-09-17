@@ -111,6 +111,9 @@ type ConnectionState struct {
 	PeerCertificates []*x509.Certificate
 	// the verified certificate chains built from PeerCertificates.
 	VerifiedChains [][]*x509.Certificate
+
+	// the TackExtension presented by the server
+	TackExtension *tack.TackExtension
 }
 
 // ClientAuthType declares the policy the server will follow for
@@ -182,6 +185,9 @@ type Config struct {
 	// CipherSuites is a list of supported cipher suites. If CipherSuites
 	// is nil, TLS uses a list of suites supported by the implementation.
 	CipherSuites []uint16
+
+	// Client requests a TackExtension, or false
+	TackExt bool
 
 	// Server specifies the TackExtension to use, or nil
 	TackExtension *tack.TackExtension;

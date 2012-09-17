@@ -12,7 +12,9 @@ import (
 	"crypto/x509"
 	"errors"
 	"io"
+	"fmt"
 	"strconv"
+	"tackgo/tack"
 )
 
 func (c *Conn) clientHandshake() error {
@@ -32,6 +34,7 @@ func (c *Conn) clientHandshake() error {
 		supportedCurves:    []uint16{curveP256, curveP384, curveP521},
 		supportedPoints:    []uint8{pointFormatUncompressed},
 		nextProtoNeg:       len(c.config.NextProtos) > 0,
+		tackExt:            c.config.TackExt,
 	}
 
 	t := uint32(c.config.time().Unix())
@@ -73,6 +76,11 @@ func (c *Conn) clientHandshake() error {
 	if !hello.nextProtoNeg && serverHello.nextProtoNeg {
 		c.sendAlert(alertHandshakeFailure)
 		return errors.New("server advertised unrequested NPN")
+	}
+
+	if !hello.tackExt && serverHello.tackExt {
+		c.sendAlert(alertHandshakeFailure)
+		return errors.New("server advertised unrequested TackExtension")
 	}
 
 	suite := mutualCipherSuite(c.config.cipherSuites(), serverHello.cipherSuite)
@@ -295,6 +303,14 @@ func (c *Conn) clientHandshake() error {
 
 		finishedHash.Write(nextProto.marshal())
 		c.writeRecord(recordTypeHandshake, nextProto.marshal())
+	}
+
+	if serverHello.tackExt {
+		c.tackExtension, err = tack.NewTackExtensionFromBytes(serverHello.tackExtBytes)
+		if err != nil {
+			c.sendAlert(alertBadCertificate)
+			return errors.New("failed to parse tack extension from server: " + err.Error())
+		}
 	}
 
 	finished := new(finishedMsg)
