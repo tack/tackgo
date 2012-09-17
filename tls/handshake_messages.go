@@ -18,6 +18,7 @@ type clientHelloMsg struct {
 	ocspStapling       bool
 	supportedCurves    []uint16
 	supportedPoints    []uint8
+	tackExt            bool
 }
 
 func (m *clientHelloMsg) equal(i interface{}) bool {
@@ -36,7 +37,8 @@ func (m *clientHelloMsg) equal(i interface{}) bool {
 		m.serverName == m1.serverName &&
 		m.ocspStapling == m1.ocspStapling &&
 		eqUint16s(m.supportedCurves, m1.supportedCurves) &&
-		bytes.Equal(m.supportedPoints, m1.supportedPoints)
+		bytes.Equal(m.supportedPoints, m1.supportedPoints) &&
+		m.tackExt == m1.tackExt
 }
 
 func (m *clientHelloMsg) marshal() []byte {
@@ -64,6 +66,9 @@ func (m *clientHelloMsg) marshal() []byte {
 	}
 	if len(m.supportedPoints) > 0 {
 		extensionsLength += 1 + len(m.supportedPoints)
+		numExtensions++
+	}
+	if m.tackExt {
 		numExtensions++
 	}
 	if numExtensions > 0 {
@@ -179,6 +184,12 @@ func (m *clientHelloMsg) marshal() []byte {
 			z[0] = byte(pointFormat)
 			z = z[1:]
 		}
+	}
+	if m.tackExt {
+		z[0] = byte(extensionTackExt >> 8)
+		z[1] = byte(extensionTackExt)
+		// The length is always 0
+		z = z[4:]
 	}
 
 	m.raw = x
@@ -311,6 +322,11 @@ func (m *clientHelloMsg) unmarshal(data []byte) bool {
 			}
 			m.supportedPoints = make([]uint8, l)
 			copy(m.supportedPoints, data[1:])
+		case extensionTackExt:
+			if length > 0 {
+				return false
+			}
+			m.tackExt = true
 		}
 		data = data[length:]
 	}
@@ -328,6 +344,8 @@ type serverHelloMsg struct {
 	nextProtoNeg      bool
 	nextProtos        []string
 	ocspStapling      bool
+	tackExt           bool
+	tackExtBytes      []byte
 }
 
 func (m *serverHelloMsg) equal(i interface{}) bool {
@@ -344,7 +362,9 @@ func (m *serverHelloMsg) equal(i interface{}) bool {
 		m.compressionMethod == m1.compressionMethod &&
 		m.nextProtoNeg == m1.nextProtoNeg &&
 		eqStrings(m.nextProtos, m1.nextProtos) &&
-		m.ocspStapling == m1.ocspStapling
+		m.ocspStapling == m1.ocspStapling &&
+		m.tackExt == m1.tackExt && 
+		bytes.Equal(m.tackExtBytes, m1.tackExtBytes)
 }
 
 func (m *serverHelloMsg) marshal() []byte {
@@ -367,6 +387,10 @@ func (m *serverHelloMsg) marshal() []byte {
 	}
 	if m.ocspStapling {
 		numExtensions++
+	}
+	if m.tackExt {
+		numExtensions++ 
+		extensionsLength += len(m.tackExtBytes)
 	}
 	if numExtensions > 0 {
 		extensionsLength += 4 * numExtensions
@@ -416,6 +440,14 @@ func (m *serverHelloMsg) marshal() []byte {
 		z[1] = byte(extensionStatusRequest)
 		z = z[4:]
 	}
+	if m.tackExt {
+		z[0] = byte(extensionTackExt >> 8)
+		z[1] = byte(extensionTackExt)
+		z[2] = byte(len(m.tackExtBytes) >> 8)
+		z[3] = byte(len(m.tackExtBytes))
+		copy(z[4:], m.tackExtBytes)
+		z = z[4 + len(m.tackExtBytes):]
+	}
 
 	m.raw = x
 
@@ -445,6 +477,8 @@ func (m *serverHelloMsg) unmarshal(data []byte) bool {
 	m.nextProtoNeg = false
 	m.nextProtos = nil
 	m.ocspStapling = false
+	m.tackExt = false
+	m.tackExtBytes = nil
 
 	if len(data) == 0 {
 		// ServerHello is optionally followed by extension data
@@ -489,6 +523,8 @@ func (m *serverHelloMsg) unmarshal(data []byte) bool {
 				return false
 			}
 			m.ocspStapling = true
+		case extensionTackExt:
+			m.tackExtBytes = append(m.tackExtBytes, data...)			
 		}
 		data = data[length:]
 	}

@@ -126,6 +126,11 @@ FindCipherSuite:
 		hello.ocspStapling = true
 	}
 
+	if clientHello.tackExt && config.TackExtension != nil {
+		hello.tackExt = true
+		hello.tackExtBytes = config.TackExtension.Serialize()
+	}
+
 	finishedHash.Write(hello.marshal())
 	c.writeRecord(recordTypeHandshake, hello.marshal())
 

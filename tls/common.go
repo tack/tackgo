@@ -12,6 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
+	"tackgo/tack"
 )
 
 const (
@@ -64,6 +65,7 @@ var (
 	extensionSupportedCurves uint16 = 10
 	extensionSupportedPoints uint16 = 11
 	extensionNextProtoNeg    uint16 = 13172 // not IANA assigned
+	extensionTackExt         uint16 = 62208 // not IANA assigned
 )
 
 // TLS Elliptic Curves
@@ -180,6 +182,9 @@ type Config struct {
 	// CipherSuites is a list of supported cipher suites. If CipherSuites
 	// is nil, TLS uses a list of suites supported by the implementation.
 	CipherSuites []uint16
+
+	// Server specifies the TackExtension to use, or nil
+	TackExtension *tack.TackExtension;
 }
 
 func (c *Config) rand() io.Reader {
