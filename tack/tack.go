@@ -41,7 +41,8 @@ func NewTack(publicKey []byte, minGeneration uint8, generation uint8,
 	if len(signature) != SIG_LENGTH {
 		return nil, fmt.Errorf("signature is the wrong size: %d", len(signature))
 	}
-	return &Tack{publicKey, minGeneration, generation, expiration, targetHash, signature}, nil
+	return &Tack{publicKey, minGeneration, generation, expiration, targetHash, 
+		signature}, nil
 }
 
 func NewTackFromBytes(b []byte) (*Tack, error) {
@@ -53,7 +54,8 @@ func NewTackFromBytes(b []byte) (*Tack, error) {
 	i += PUBKEY_LENGTH
 	t.MinGeneration = b[i]
 	t.Generation = b[i+1]
-	t.Expiration = uint32(b[i+2])<<24 | uint32(b[i+3])<<16 | uint32(b[i+4])<<8 | uint32(b[i+5])
+	t.Expiration = uint32(b[i+2])<<24 | uint32(b[i+3])<<16 | uint32(b[i+4])<<8 | 
+		uint32(b[i+5])
 	t.TargetHash = b[i+6 : i+6+HASH_LENGTH]
 	i += 6 + HASH_LENGTH
 	t.Signature = b[i : i+SIG_LENGTH]
