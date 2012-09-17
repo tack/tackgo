@@ -50,7 +50,7 @@ func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
 			break
 		}
 	}
-	te.ActivationFlags = b[0]
+	te.ActivationFlags, _ = buf.ReadByte()
 	if te.ActivationFlags > 3 {
 		return nil, fmt.Errorf("Bad ActivationFlags: %d", te.ActivationFlags)
 	}

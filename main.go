@@ -1,32 +1,19 @@
 package main
 
 import (
-	"net"
-	"tackgo/tls"
-	"log"
-	"io"
+	"tackgo/tack/commands"
+	"os"
+	"strings"
 )
 
 func main() {
-	
-	certFile := "/Users/trevp/w/tlslite/tests/serverX509Cert.pem"
-	keyFile := "/Users/trevp/w/tlslite/tests/serverX509Key.pem"
-	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
-	if (err != nil) {log.Fatal(err)}
-	
-	config := tls.Config{Certificates : []tls.Certificate{cert}}
-	
-	l, err := tls.Listen("tcp", ":4443", &config)
-	if err != nil {log.Fatal(err)}
 
-	for {
-	    // Wait for a connection. 
-	    conn, err := l.Accept()
-	    if err != nil {log.Fatal(err)}
-
-	    go func(c net.Conn) {
-	        io.Copy(c, c)
-	        c.Close()
-	    }(conn)
-	}	
+	switch {
+	case len(os.Args) < 2:
+		commands.PrintGeneralUsage("Missing command")
+	case strings.HasPrefix("client", os.Args[1]):
+		commands.Client(os.Args[2:])
+	case strings.HasPrefix("server", os.Args[1]):
+		commands.Server(os.Args[2:])
+	}
 }

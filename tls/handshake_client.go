@@ -12,7 +12,6 @@ import (
 	"crypto/x509"
 	"errors"
 	"io"
-	"fmt"
 	"strconv"
 	"tackgo/tack"
 )
