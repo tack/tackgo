@@ -65,7 +65,7 @@ var (
 	extensionSupportedCurves uint16 = 10
 	extensionSupportedPoints uint16 = 11
 	extensionNextProtoNeg    uint16 = 13172 // not IANA assigned
-	extensionTackExt         uint16 = 62208 // not IANA assigned
+	extensionTack            uint16 = 62208 // not IANA assigned
 )
 
 // TLS Elliptic Curves
@@ -187,7 +187,7 @@ type Config struct {
 	CipherSuites []uint16
 
 	// Client requests a TackExtension, or false
-	TackExt bool
+	Tack bool
 
 	// Server specifies the TackExtension to use, or nil
 	TackExtension *tack.TackExtension;

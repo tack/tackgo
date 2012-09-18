@@ -126,9 +126,9 @@ FindCipherSuite:
 		hello.ocspStapling = true
 	}
 
-	if clientHello.tackExt && config.TackExtension != nil {
-		hello.tackExt = true
-		hello.tackExtBytes = config.TackExtension.Serialize()
+	if clientHello.tack && config.TackExtension != nil {
+		hello.tack = true
+		hello.tackBytes = config.TackExtension.Serialize()
 	}
 
 	finishedHash.Write(hello.marshal())

@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"time"
 	"tackgo/tack/util"
 )
 
@@ -93,4 +94,20 @@ func (te *TackExtension) String() string {
 
 func (te *TackExtension) Len() int {
 	return 3 + len(te.Tacks)*TACK_LENGTH
+}
+
+func (te *TackExtension) WellFormed(currentTime time.Time, spkiHash []byte) error {
+	if len(te.Tacks) < 1 || len(te.Tacks) > 2 {
+		return WellFormedError{"Wrong number of tacks", false}
+	}
+
+	for _,t := range te.Tacks {
+		if err := t.WellFormed(currentTime, spkiHash); err != nil {
+			return err
+		}
+	}
+	if te.ActivationFlags < 0 || te.ActivationFlags > 3 {
+		return WellFormedError{"Wrong activation flags", false}
+	}
+	return nil
 }

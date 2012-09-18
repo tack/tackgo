@@ -10,6 +10,7 @@ import (
 	"errors"
 	"fmt"
 	"math/big"
+	"time"
 	"tackgo/tack/util"
 )
 
@@ -149,4 +150,31 @@ func (t *Tack) Verify() bool {
 	r.SetBytes(t.Signature[:SIG_LENGTH/2])
 	s.SetBytes(t.Signature[SIG_LENGTH/2:])
 	return ecdsa.Verify(&pubKey, t.hashForSig(), &r, &s)
+}
+
+func (t *Tack) WellFormed(currentTime time.Time, spkiHash []byte) error {
+	if t.MinGeneration > t.Generation {
+		return WellFormedError{"MinGeneration > Generation", false}
+	}
+	if currentTime.Unix() > int64(t.Expiration)*60 {
+		return WellFormedError{"Tack expired", true}
+	}
+	if !bytes.Equal(t.TargetHash, spkiHash) {
+		errString := fmt.Sprintf("TargetHash not correct: target_hash=%v, spki hash=%v", 
+			t.TargetHash, spkiHash)
+		return WellFormedError{errString, false}
+	}
+	if !t.Verify() {
+		return WellFormedError{"Signature not correct", false}
+	}
+	return nil
+}
+
+type WellFormedError struct {
+	msg string
+	IsExpirationError bool
+}
+
+func (err WellFormedError) Error() string { 
+	return err.msg
 }

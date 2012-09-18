@@ -8,6 +8,7 @@ import (
 	"bytes"
 	"crypto"
 	"crypto/rsa"
+	"crypto/sha256"
 	"crypto/subtle"
 	"crypto/x509"
 	"errors"
@@ -33,7 +34,7 @@ func (c *Conn) clientHandshake() error {
 		supportedCurves:    []uint16{curveP256, curveP384, curveP521},
 		supportedPoints:    []uint8{pointFormatUncompressed},
 		nextProtoNeg:       len(c.config.NextProtos) > 0,
-		tackExt:            c.config.TackExt,
+		tack:               c.config.Tack,
 	}
 
 	t := uint32(c.config.time().Unix())
@@ -77,9 +78,9 @@ func (c *Conn) clientHandshake() error {
 		return errors.New("server advertised unrequested NPN")
 	}
 
-	if !hello.tackExt && serverHello.tackExt {
+	if !hello.tack && serverHello.tack {
 		c.sendAlert(alertHandshakeFailure)
-		return errors.New("server advertised unrequested TackExtension")
+		return errors.New("server sent unrequested TackExtension")
 	}
 
 	suite := mutualCipherSuite(c.config.cipherSuites(), serverHello.cipherSuite)
@@ -304,11 +305,28 @@ func (c *Conn) clientHandshake() error {
 		c.writeRecord(recordTypeHandshake, nextProto.marshal())
 	}
 
-	if serverHello.tackExt {
-		c.tackExtension, err = tack.NewTackExtensionFromBytes(serverHello.tackExtBytes)
+	if serverHello.tack {
+		c.tackExtension, err = tack.NewTackExtensionFromBytes(serverHello.tackBytes)
 		if err != nil {
 			c.sendAlert(alertBadCertificate)
-			return errors.New("failed to parse tack extension from server: " + err.Error())
+			return err
+		}
+
+		// Hash the SPKI to compare to target_hash
+		if len(certs) == 0 {
+			c.sendAlert(alertBadCertificate)
+			return errors.New("TACK requires a leaf certificate")
+		}
+		hashAlg := sha256.New()
+		hashAlg.Write(certs[0].RawSubjectPublicKeyInfo)
+		err = c.tackExtension.WellFormed(c.config.time(), hashAlg.Sum(nil))
+		if err != nil  {
+			if err.(tack.WellFormedError).IsExpirationError {
+				c.sendAlert(alertCertificateExpired)
+				return err
+			} 
+			c.sendAlert(alertBadCertificate)
+			return err
 		}
 	}
 
