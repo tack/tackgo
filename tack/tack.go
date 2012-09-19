@@ -94,7 +94,7 @@ func (t *Tack) SerializeAsPem() string {
 	return util.Pem(b, "TACK")
 }
 
-func (t *Tack) KeyFingerprint() string {
+func (t *Tack) GetKeyFingerprint() string {
 	return util.KeyFingerprint(t.PublicKey)
 }
 
@@ -105,7 +105,7 @@ min_generation  = %d
 generation      = %d
 expiration      = %s
 target_hash     = %s
-`, t.KeyFingerprint(), t.MinGeneration, t.Generation,
+`, t.GetKeyFingerprint(), t.MinGeneration, t.Generation,
 		util.MinutesToString(t.Expiration), util.BytesToHexString(t.TargetHash))
 	return s
 }
@@ -154,27 +154,17 @@ func (t *Tack) Verify() bool {
 
 func (t *Tack) WellFormed(currentTime time.Time, spkiHash []byte) error {
 	if t.MinGeneration > t.Generation {
-		return WellFormedError{"MinGeneration > Generation", false}
+		return errors.New("MinGeneration > Generation")
 	}
 	if currentTime.Unix() > int64(t.Expiration)*60 {
-		return WellFormedError{"Tack expired", true}
+		return ExpirationError{}
 	}
 	if !bytes.Equal(t.TargetHash, spkiHash) {
-		errString := fmt.Sprintf("TargetHash not correct: target_hash=%v, spki hash=%v", 
+		return fmt.Errorf("TargetHash not correct: target_hash=%v, spki hash=%v", 
 			t.TargetHash, spkiHash)
-		return WellFormedError{errString, false}
 	}
 	if !t.Verify() {
-		return WellFormedError{"Signature not correct", false}
+		return errors.New("Signature not correct")
 	}
 	return nil
-}
-
-type WellFormedError struct {
-	msg string
-	IsExpirationError bool
-}
-
-func (err WellFormedError) Error() string { 
-	return err.msg
 }

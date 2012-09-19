@@ -321,10 +321,10 @@ func (c *Conn) clientHandshake() error {
 		hashAlg.Write(certs[0].RawSubjectPublicKeyInfo)
 		err = c.tackExtension.WellFormed(c.config.time(), hashAlg.Sum(nil))
 		if err != nil  {
-			if err.(tack.WellFormedError).IsExpirationError {
+			if _, ok := err.(tack.ExpirationError); ok {
 				c.sendAlert(alertCertificateExpired)
 				return err
-			} 
+			}
 			c.sendAlert(alertBadCertificate)
 			return err
 		}

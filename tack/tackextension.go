@@ -96,9 +96,21 @@ func (te *TackExtension) Len() int {
 	return 3 + len(te.Tacks)*TACK_LENGTH
 }
 
+func (te *TackExtension) IsActive(tackIndex int) bool {
+	return ((te.ActivationFlags & (1 << uint8(tackIndex))) != 0)
+}
+
+func (te *TackExtension) GetKeyFingerprints() []string {
+	fingerprints := make([]string, 0, 2)
+	for _, tack := range te.Tacks {
+		fingerprints = append(fingerprints, tack.GetKeyFingerprint())
+	}
+	return fingerprints
+}
+
 func (te *TackExtension) WellFormed(currentTime time.Time, spkiHash []byte) error {
 	if len(te.Tacks) < 1 || len(te.Tacks) > 2 {
-		return WellFormedError{"Wrong number of tacks", false}
+		return errors.New("Wrong number of tacks")
 	}
 
 	for _,t := range te.Tacks {
@@ -106,8 +118,13 @@ func (te *TackExtension) WellFormed(currentTime time.Time, spkiHash []byte) erro
 			return err
 		}
 	}
+	if len(te.Tacks) == 2 {
+		if bytes.Equal(te.Tacks[0].PublicKey, te.Tacks[1].PublicKey) {
+			return errors.New("Two tacks with matching keys")
+		}
+	}
 	if te.ActivationFlags < 0 || te.ActivationFlags > 3 {
-		return WellFormedError{"Wrong activation flags", false}
+		return errors.New("Wrong activation flags")
 	}
 	return nil
 }
