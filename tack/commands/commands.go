@@ -65,6 +65,22 @@ func Server(args [] string) error {
 		os.Exit(1)
 	}
 
+	talkChan := make(chan int)
+
+	go tlsServer(certFile, keyFile, tackExtFile, talkChan)
+	log.Println("TLS Server launched on 8443")
+
+	go httpServer(talkChan)
+	log.Println("HTTP Server launched on 8080")
+
+	endChan := make(chan int)
+	_ = <- endChan // Wait endlessly for goroutines
+
+	return nil
+}
+
+func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan int) {
+
 	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
 	if (err != nil) {log.Fatal(err)}
 	
@@ -85,42 +101,30 @@ func Server(args [] string) error {
 	tcpListener, err:= net.ListenTCP("tcp4", &net.TCPAddr{net.IPv4(127,0,0,1), 8443})
 	if err != nil {log.Fatal(err)}
 	tlsListener := tls.NewListener(tcpListener, &config)
-	tlsChan := make(chan int)
 
-	go tlsServer(tlsListener, tcpListener, tlsChan)
-	log.Println("TLS Server launched on 8443")
-
-	go httpServer(tlsChan)
-	log.Println("HTTP Server launched on 8080")
-
-	permablock := make(chan int)
-	_ = <- permablock // Wait endlessly for goroutines
-
-	return nil
-}
-
-func tlsServer(l net.Listener, tcpListener *net.TCPListener, tlsChan chan int) {
 	for {
 		// Wait for a new connection 
 		tcpListener.SetDeadline(time.Now().Add(time.Second))
-		conn, err := l.Accept()
+		conn, err := tlsListener.Accept()
 
 		// If the call returned with err it could b a timeout, check whether
 		// a tlsChan message has arrived
 		if err != nil {
 			select {
-			case i := <-tlsChan:
-				fmt.Fprintf(os.Stderr, "tlsServer channel response %v", i)
+			case i := <-talkChan:
+				fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", i)
 				if i == 0 {
-					tlsChan <- 1
+					config = tls.Config{}
+					config.Certificates = []tls.Certificate{cert}
+					tlsListener = tls.NewListener(tcpListener, &config)
+					talkChan <- 1
 				}
 			default:
 			}
 			continue;
 		}
-
 		
-		// Run a goroutine to handle it
+		// Run a goroutine to handle the new connection
 		go func(c net.Conn) {
 			io.Copy(c, c)
 			c.Close()
@@ -128,15 +132,15 @@ func tlsServer(l net.Listener, tcpListener *net.TCPListener, tlsChan chan int) {
 	}
 }
 
-func httpServer(tlsChan chan int) {
+func httpServer(talkChan chan int) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		request := r.URL.Path[1:]
 		fmt.Fprintf(w, "Hi there, I love %s!", request)
 		if request == "cycle" {
-			tlsChan <- 0
-			i := <- tlsChan
-			fmt.Fprintf(os.Stderr, "httpServer channel response %v", i)
+			talkChan <- 0
+			i := <- talkChan
+			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", i)
 		}
 	}
 
