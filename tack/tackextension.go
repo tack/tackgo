@@ -6,7 +6,6 @@ import (
 	"errors"
 	"fmt"
 	"time"
-	"tackgo/tack/util"
 )
 
 type TackExtension struct {
@@ -36,7 +35,7 @@ func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
 	var lenTacks uint16
 	binary.Read(buf, binary.BigEndian, &lenTacks)
 	if int(lenTacks)+3 != len(b) {
-		return nil, fmt.Errorf("Tacks field is the wrong size: %d", lenTacks)
+		return nil, TacksLengthError{}
 	}
 
 	te := TackExtension{}
@@ -53,14 +52,14 @@ func NewTackExtensionFromBytes(b []byte) (*TackExtension, error) {
 	}
 	te.ActivationFlags, _ = buf.ReadByte()
 	if te.ActivationFlags > 3 {
-		return nil, fmt.Errorf("Bad ActivationFlags: %d", te.ActivationFlags)
+		return nil, ActivationFlagsError{}
 	}
 
 	return &te, nil
 }
 
 func NewTackExtensionFromPem(s string) (*TackExtension, error) {
-	b, err := util.Depem(s, "TACK EXTENSION")
+	b, err := depem(s, "TACK EXTENSION")
 	if err != nil {
 		return nil, err
 	}
@@ -80,7 +79,7 @@ func (te *TackExtension) Serialize() []byte {
 
 func (te *TackExtension) SerializeAsPem() string {
 	b := te.Serialize()
-	return util.Pem(b, "TACK EXTENSION")
+	return pem(b, "TACK EXTENSION")
 }
 
 func (te *TackExtension) String() string {
@@ -120,11 +119,11 @@ func (te *TackExtension) WellFormed(currentTime time.Time, spkiHash []byte) erro
 	}
 	if len(te.Tacks) == 2 {
 		if bytes.Equal(te.Tacks[0].PublicKey, te.Tacks[1].PublicKey) {
-			return errors.New("Two tacks with matching keys")
+			return DuplicateTackKeysError{}
 		}
 	}
 	if te.ActivationFlags < 0 || te.ActivationFlags > 3 {
-		return errors.New("Wrong activation flags")
+		return ActivationFlagsError{}
 	}
 	return nil
 }

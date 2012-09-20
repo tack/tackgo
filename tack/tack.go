@@ -11,7 +11,6 @@ import (
 	"fmt"
 	"math/big"
 	"time"
-	"tackgo/tack/util"
 )
 
 const TACK_LENGTH = 166
@@ -61,13 +60,13 @@ func NewTackFromBytes(b []byte) (*Tack, error) {
 	i += 6 + HASH_LENGTH
 	t.Signature = b[i : i+SIG_LENGTH]
 	if t.MinGeneration > t.Generation {
-		return nil, errors.New("MinGeneration > Generation")
+		return nil, GenerationError{}
 	}
 	return &t, nil
 }
 
 func NewTackFromPem(s string) (*Tack, error) {
-	b, err := util.Depem(s, "TACK")
+	b, err := depem(s, "TACK")
 	if err != nil {
 		return nil, err
 	}
@@ -91,7 +90,7 @@ func (t *Tack) Serialize() []byte {
 
 func (t *Tack) SerializeAsPem() string {
 	b := t.Serialize()
-	return util.Pem(b, "TACK")
+	return pem(b, "TACK")
 }
 
 func (t *Tack) GetKeyFingerprint() KeyFingerprint {
@@ -106,7 +105,7 @@ generation      = %d
 expiration      = %s
 target_hash     = %s
 `, t.GetKeyFingerprint(), t.MinGeneration, t.Generation,
-		util.MinutesToString(t.Expiration), util.BytesToHexString(t.TargetHash))
+		minutesToString(t.Expiration), bytesToHexString(t.TargetHash))
 	return s
 }
 
@@ -154,17 +153,16 @@ func (t *Tack) Verify() bool {
 
 func (t *Tack) WellFormed(currentTime time.Time, spkiHash []byte) error {
 	if t.MinGeneration > t.Generation {
-		return errors.New("MinGeneration > Generation")
+		return GenerationError{}
 	}
 	if currentTime.Unix() > int64(t.Expiration)*60 {
 		return ExpirationError{}
 	}
 	if !bytes.Equal(t.TargetHash, spkiHash) {
-		return fmt.Errorf("TargetHash not correct: target_hash=%v, spki hash=%v", 
-			t.TargetHash, spkiHash)
+		return TargetHashError{}
 	}
 	if !t.Verify() {
-		return errors.New("Signature not correct")
+		return SignatureError{}
 	}
 	return nil
 }
