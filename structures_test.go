@@ -100,4 +100,13 @@ func TestStore(test *testing.T) {
 	if err != nil {test.Fatal(err)}
 	s2 := store.String()
 	if s != s2 {test.Fatal("store string mismatch")}
+
+	s = `[
+["alpha.com", "aaaaa.kfbj5.oweph.mdyxi.wvbch", 0, 22468065],
+["beta.com", "xxxxx.qqqqq.wwwww.eeeee.rrrrr", 1, 22468065, 22468074],
+["test.tack.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 255, 0, 30000000]
+]`
+
+	store, err = tack.NewDefaultStoreFromJSON(s)
+	if _,ok := err.(tack.PinListError); !ok {test.Fatal("wrong error for pin store")}
 }
