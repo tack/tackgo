@@ -1,5 +1,9 @@
 package tack
 
+// We provide error types for errors that programmers may want to handle.
+// Errors due to coding problems (e.g. incorrect args) may return a 
+// default error type, or may even panic
+
 // Tack-related
 type ExpirationError struct {}
 func (err ExpirationError) Error() string {return "Tack is expired"}
@@ -35,5 +39,3 @@ func (err PinListError) Error() string {return "Pin list is invalid"}
 
 type PemError struct {s string}
 func (err PemError) Error() string {return err.s}
-
-
