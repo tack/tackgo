@@ -7,7 +7,7 @@ const (
 	REJECTED
 )
 
-func ProcessStore(tackExt *TackExtension, store PinStore, name string, 
+func ProcessStore(store PinStore, tackExt *TackExtension, name string, 
 	currentTime uint32) (status Status, err error) {
 
 	tackMatchesPin := []bool{false, false}

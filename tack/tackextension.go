@@ -100,8 +100,8 @@ func (te *TackExtension) IsActive(tackIndex int) bool {
 	return ((te.ActivationFlags & (1 << uint8(tackIndex))) != 0)
 }
 
-func (te *TackExtension) GetKeyFingerprints() []string {
-	fingerprints := make([]string, 0, 2)
+func (te *TackExtension) GetKeyFingerprints() []KeyFingerprint {
+	fingerprints := make([]KeyFingerprint, 0, 2)
 	for _, tack := range te.Tacks {
 		fingerprints = append(fingerprints, tack.GetKeyFingerprint())
 	}

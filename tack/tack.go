@@ -94,8 +94,8 @@ func (t *Tack) SerializeAsPem() string {
 	return util.Pem(b, "TACK")
 }
 
-func (t *Tack) GetKeyFingerprint() string {
-	return util.KeyFingerprint(t.PublicKey)
+func (t *Tack) GetKeyFingerprint() KeyFingerprint {
+	return NewKeyFingerprintFromBytes(t.PublicKey)
 }
 
 func (t *Tack) String() string {

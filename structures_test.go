@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 	"testing"
 	"crypto/rand"
 	"crypto/elliptic"
@@ -76,12 +77,23 @@ generation      = 254
 expiration      = 2026-12-17T01:55Z
 target_hash     = 32b64b66727a2063e4066f3b958cb0aa
                   ee576a5ecefd953399bb8874731d9587
-activation_flags = 1
-` {test.Fatal("tack ext print mismatch")}
+activation_flags = 0
+` {
+		log.Println(s)
+		test.Fatal("tack ext print mismatch")
+	}
 
 	s = te.SerializeAsPem()
 	te2, err := tack.NewTackExtensionFromPem(s)
 	if err != nil {test.Fatal(err)}
 	s2 = te2.SerializeAsPem()
 	if s != s2 {test.Fatal("tack ext string mismatch")}	
+}
+
+func TestStore(test *testing.T) {
+	s := `[
+["alpha.com", "aaaaa.kfbj5.oweph.mdyxi.wvbch", 0, 22468065, 22468074],
+["test.tack.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 0, 22468065, 22468074]
+]`
+	_,_ = tack.NewDefaultStoreFromJSON(s)
 }
