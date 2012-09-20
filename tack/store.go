@@ -62,18 +62,18 @@ func (store *DefaultStore) AddPin(name string, pin *Pin) error {
 	return nil
 }
 
-func (store *DefaultStore) SerializeAsJSON() string {
+func (store *DefaultStore) String() string {
 	entries := make([]string, 0, len(store.pins)) 
 	for name, pinPair := range store.pins {
 		for _, pin := range pinPair  {
 			minGeneration := store.keys[pin.fingerprint]
-			entry := fmt.Sprintf("[%v, %v, %v, %v]", 
+				entry := fmt.Sprintf("[\"%v\", \"%v\", %v, %v, %v]", 
 				name, pin.fingerprint, minGeneration, pin.initialTime, pin.endTime)
 			entries = append(entries, entry)			
 		}
 	}
 	sort.Strings(entries)
-	return "[" + strings.Join(entries, ",\n") + "]"
+	return "[\n" + strings.Join(entries, ",\n") + "\n]"
 }
 
 func NewDefaultStoreFromJSON(s string) (store *DefaultStore, err error) {
