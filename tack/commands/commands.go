@@ -65,7 +65,7 @@ func Server(args [] string) error {
 		os.Exit(1)
 	}
 
-	talkChan := make(chan int)
+	talkChan := make(chan string)
 
 	go tlsServer(certFile, keyFile, tackExtFile, talkChan)
 	log.Println("TLS Server launched on 8443")
@@ -79,7 +79,7 @@ func Server(args [] string) error {
 	return nil
 }
 
-func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan int) {
+func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan string) {
 
 	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
 	if (err != nil) {log.Fatal(err)}
@@ -108,16 +108,16 @@ func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan int) {
 		conn, err := tlsListener.Accept()
 
 		// If the call returned with err it could b a timeout, check whether
-		// a tlsChan message has arrived
+		// a talkChan message has arrived
 		if err != nil {
 			select {
-			case i := <-talkChan:
-				fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", i)
-				if i == 0 {
+			case s := <-talkChan:
+				fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", s)
+				if s == "next" {
 					config = tls.Config{}
 					config.Certificates = []tls.Certificate{cert}
 					tlsListener = tls.NewListener(tcpListener, &config)
-					talkChan <- 1
+					talkChan <- "done"
 				}
 			default:
 			}
@@ -132,15 +132,23 @@ func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan int) {
 	}
 }
 
-func httpServer(talkChan chan int) {
+func httpServer(talkChan chan string) {
 
 	handler := func(w http.ResponseWriter, r *http.Request) {
 		request := r.URL.Path[1:]
-		fmt.Fprintf(w, "Hi there, I love %s!", request)
-		if request == "cycle" {
-			talkChan <- 0
-			i := <- talkChan
-			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", i)
+		switch (request) {
+			/*
+		case "new":
+			talkChan <- "new"
+			s := <- talkChan
+			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", s)
+			 */
+		case "next":
+			talkChan <- "next"
+			s := <- talkChan
+			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", s)
+		default:
+			fmt.Fprintf(w, "Hi there, I don't know \"%s\"!", request)
 		}
 	}
 

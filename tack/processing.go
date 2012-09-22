@@ -78,10 +78,10 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 	if store.GetPinActivation() {
 		for t, tack := range tackExt.Tacks {
 			if tackExt.IsActive(t) && !tackMatchesPin[t] {
+				store.SetMinGeneration(tackFingerprints[t], tack.MinGeneration)
 				if len(newPins) > 1 {panic("ASSERT: only 2 pins allowed in pair");}
 				newPins = append(newPins, &Pin{currentTime, 0, tackFingerprints[t]})
 				madeChanges = true  // Add pin
-				store.SetMinGeneration(tackFingerprints[t], tack.MinGeneration)
 			}
 		}
 		// Commit pin changes
