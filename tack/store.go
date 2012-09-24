@@ -1,9 +1,9 @@
 package tack
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
-	"encoding/json"
 	"math"
 	"sort"
 	"strings"
@@ -27,8 +27,8 @@ type PinStore interface {
 
 type DefaultStore struct {
 	PinActivation bool
-	keys map[KeyFingerprint] uint8  // fingerprints -> minGenerations
-	pins map[string] []*Pin // names -> Pins
+	keys          map[KeyFingerprint]uint8 // fingerprints -> minGenerations
+	pins          map[string][]*Pin        // names -> Pins
 }
 
 func (store *DefaultStore) GetPinActivation() bool {
@@ -63,13 +63,13 @@ func (store *DefaultStore) AddPin(name string, pin *Pin) error {
 }
 
 func (store *DefaultStore) String() string {
-	entries := make([]string, 0, len(store.pins)) 
+	entries := make([]string, 0, len(store.pins))
 	for name, pinPair := range store.pins {
-		for _, pin := range pinPair  {
+		for _, pin := range pinPair {
 			minGeneration := store.keys[pin.fingerprint]
-				entry := fmt.Sprintf("[\"%v\", \"%v\", %v, %v, %v]", 
+			entry := fmt.Sprintf("[\"%v\", \"%v\", %v, %v, %v]",
 				name, pin.fingerprint, minGeneration, pin.initialTime, pin.endTime)
-			entries = append(entries, entry)			
+			entries = append(entries, entry)
 		}
 	}
 	sort.Strings(entries)
@@ -79,8 +79,8 @@ func (store *DefaultStore) String() string {
 func NewDefaultStoreFromJSON(s string) (store *DefaultStore, err error) {
 
 	store = &DefaultStore{}
-	store.pins = make(map[string] []*Pin)
-	store.keys = make(map[KeyFingerprint] uint8)
+	store.pins = make(map[string][]*Pin)
+	store.keys = make(map[KeyFingerprint]uint8)
 
 	var stuff interface{}
 
@@ -89,9 +89,9 @@ func NewDefaultStoreFromJSON(s string) (store *DefaultStore, err error) {
 		if r := recover(); r != nil {
 			err = PinListError{}
 		}
-	} ()
+	}()
 
-    err = json.Unmarshal([]byte(s), &stuff)
+	err = json.Unmarshal([]byte(s), &stuff)
 	if err != nil {
 		return nil, PinListError{}
 	}
@@ -109,16 +109,18 @@ func NewDefaultStoreFromJSON(s string) (store *DefaultStore, err error) {
 		if err != nil {
 			return nil, PinListError{}
 		}
-		if initialTime < 0 || initialTime > math.MaxUint32  {
+		if initialTime < 0 || initialTime > math.MaxUint32 {
 			return nil, PinListError{}
 		}
-		if endTime < 0 || endTime > math.MaxUint32  {
+		if endTime < 0 || endTime > math.MaxUint32 {
 			return nil, PinListError{}
 		}
-		
+
 		store.SetMinGeneration(fingerprint, uint8(minGeneration))
 		err = store.AddPin(name, &Pin{uint32(initialTime), uint32(endTime), fingerprint})
-		if err != nil {return nil, PinListError{}}
+		if err != nil {
+			return nil, PinListError{}
+		}
 	}
 
 	return store, err

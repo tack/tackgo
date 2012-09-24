@@ -112,7 +112,7 @@ func (te *TackExtension) WellFormed(currentTime time.Time, spkiHash []byte) erro
 		return errors.New("Wrong number of tacks")
 	}
 
-	for _,t := range te.Tacks {
+	for _, t := range te.Tacks {
 		if err := t.WellFormed(currentTime, spkiHash); err != nil {
 			return err
 		}

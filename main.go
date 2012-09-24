@@ -1,9 +1,9 @@
 package main
 
 import (
-	"tackgo/tack/commands"
 	"os"
 	"strings"
+	"tackgo/tack/commands"
 )
 
 func main() {

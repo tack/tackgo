@@ -2,9 +2,9 @@ package tack
 
 import (
 	"encoding/base64"
+	"encoding/hex"
 	"fmt"
 	"strings"
-	"encoding/hex"
 	"time"
 )
 

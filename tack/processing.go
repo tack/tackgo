@@ -1,18 +1,19 @@
 package tack
 
 type Status int
+
 const (
 	UNPINNED Status = iota
 	ACCEPTED
 	REJECTED
 )
 
-func ProcessStore(store PinStore, tackExt *TackExtension, name string, 
+func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 	currentTime uint32) (status Status, err error) {
 
 	tackMatchesPin := []bool{false, false}
-	newPins := []*Pin{}   // Used for pin activation
-	madeChanges := false  // Used for pin activation
+	newPins := []*Pin{}  // Used for pin activation
+	madeChanges := false // Used for pin activation
 
 	// Check tack generations and update min_generations
 	tackFingerprints := tackExt.GetKeyFingerprints()
@@ -27,9 +28,9 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 		}
 	}
 
-    /* Iterate over pins and tacks, calculating the return status
-       and handling the first step of pin activation (delete and activate) */
-	for _, pin := range store.GetPinPair(name)  {		
+	/* Iterate over pins and tacks, calculating the return status
+	   and handling the first step of pin activation (delete and activate) */
+	for _, pin := range store.GetPinPair(name) {
 		pinIsActive, pinMatchesTack, pinMatchesActiveTack := false, false, false
 
 		// Fill in variables indicating pin/tack matches
@@ -50,25 +51,27 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 				return REJECTED, nil // return immediately
 			}
 			status = ACCEPTED
-		} 
+		}
 
-        // Pin activation (first step: consider each pin for deletion / activation)
+		// Pin activation (first step: consider each pin for deletion / activation)
 		if store.GetPinActivation() {
 			if !pinMatchesActiveTack {
-				madeChanges = true  // Delete pin (by not appending to newPair)
+				madeChanges = true // Delete pin (by not appending to newPair)
 			} else {
 				endTime := pin.endTime
 				if pinMatchesActiveTack && currentTime > pin.initialTime {
 					endTime = currentTime + (currentTime - pin.initialTime) - 1
-					if endTime > currentTime + (30*24*60) {
-						endTime = currentTime + (30*24*60)
+					if endTime > currentTime+(30*24*60) {
+						endTime = currentTime + (30 * 24 * 60)
 					}
 					if endTime != pin.endTime {
-						madeChanges = true  // Activate pin
+						madeChanges = true // Activate pin
 					}
 				}
-                // Append old pin to newPair, possibly extending endTime
-				if len(newPins) > 1 {panic("ASSERT: only 2 pins allowed in pair");}
+				// Append old pin to newPair, possibly extending endTime
+				if len(newPins) > 1 {
+					panic("ASSERT: only 2 pins allowed in pair")
+				}
 				newPins = append(newPins, &Pin{pin.initialTime, endTime, pin.fingerprint})
 			}
 		}
@@ -79,9 +82,11 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 		for t, tack := range tackExt.Tacks {
 			if tackExt.IsActive(t) && !tackMatchesPin[t] {
 				store.SetMinGeneration(tackFingerprints[t], tack.MinGeneration)
-				if len(newPins) > 1 {panic("ASSERT: only 2 pins allowed in pair");}
+				if len(newPins) > 1 {
+					panic("ASSERT: only 2 pins allowed in pair")
+				}
 				newPins = append(newPins, &Pin{currentTime, 0, tackFingerprints[t]})
-				madeChanges = true  // Add pin
+				madeChanges = true // Add pin
 			}
 		}
 		// Commit pin changes
