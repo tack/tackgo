@@ -147,6 +147,7 @@ func httpServer(talkChan chan string) {
 			talkChan <- "next"
 			s := <- talkChan
 			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", s)
+			fmt.Fprintf(w, "OK next")
 		default:
 			fmt.Fprintf(w, "Hi there, I don't know \"%s\"!", request)
 		}

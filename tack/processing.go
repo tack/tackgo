@@ -26,7 +26,7 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 			}
 		}
 	}
-
+	
 	// Determine the store's status
 	for p, pin := range store.GetPinPair(name) {
 		if pin.endTime > currentTime {
@@ -74,7 +74,6 @@ func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 				newPins = append(newPins, &Pin{pin.initialTime, endTime, pin.fingerprint})
 			}
 		}
-
 		// Add new inactive pins for any unmatched active tacks
 		for t, tack := range tackExt.Tacks {
 			if tackExt.IsActive(t) && !tackMatchesPin[t] {
