@@ -12,7 +12,7 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"tackgo/tack"
+	"tack"
 )
 
 const (

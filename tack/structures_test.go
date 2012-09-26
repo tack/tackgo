@@ -1,4 +1,4 @@
-package main
+package tack
 
 import (
 	"crypto/ecdsa"
@@ -6,7 +6,6 @@ import (
 	"crypto/rand"
 	"fmt"
 	"log"
-	"tackgo/tack"
 	"testing"
 )
 
@@ -20,7 +19,7 @@ iHRzHZWHzDEj0rL1BJQ2/xumpCePIyywLQB8D9z3/X8k7P8jItKI2TEy1201W5dM
 Hcip7C5zr98kfKjlw/UGG2y86KdCzQ==
 -----END TACK-----
 `
-	t, err := tack.NewTackFromPem(tackStr)
+	t, err := NewTackFromPem(tackStr)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -54,7 +53,7 @@ target_hash     = 32b64b66727a2063e4066f3b958cb0aa
 
 	// Test serialize and reparse
 	s = t.SerializeAsPem()
-	t2, err := tack.NewTackFromPem(s)
+	t2, err := NewTackFromPem(s)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -75,7 +74,7 @@ S2ZyeiBj5AZvO5WMsKruV2pezv2VM5m7iHRzHZWH5UeQpow6aJweikYRq6NNPA7r
 29ok8aGVudp5SB7o5Va8VGPysFjrcFgZSnx5K22yAKlhWqTbDNt+fOT+ZrPM+gA=
 -----END TACK EXTENSION-----
 `
-	te, err := tack.NewTackExtensionFromPem(tackExtStr)
+	te, err := NewTackExtensionFromPem(tackExtStr)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -100,7 +99,7 @@ activation_flags = 0
 	}
 
 	s = te.SerializeAsPem()
-	te2, err := tack.NewTackExtensionFromPem(s)
+	te2, err := NewTackExtensionFromPem(s)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -114,9 +113,9 @@ func TestStore(test *testing.T) {
 	s := `[
 ["alpha.com", "aaaaa.kfbj5.oweph.mdyxi.wvbch", 0, 22468065, 22468074],
 ["beta.com", "xxxxx.qqqqq.wwwww.eeeee.rrrrr", 1, 22468065, 22468074],
-["test.tack.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 255, 0, 30000000]
+["test.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 255, 0, 30000000]
 ]`
-	store, err := tack.NewDefaultStoreFromJSON(s)
+	store, err := NewDefaultStoreFromJSON(s)
 	if err != nil {
 		test.Fatal(err)
 	}
@@ -128,11 +127,11 @@ func TestStore(test *testing.T) {
 	s = `[
 ["alpha.com", "aaaaa.kfbj5.oweph.mdyxi.wvbch", 0, 22468065],
 ["beta.com", "xxxxx.qqqqq.wwwww.eeeee.rrrrr", 1, 22468065, 22468074],
-["test.tack.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 255, 0, 30000000]
+["test.io", "j6det.kfbj5.oweph.mdyxi.wvbch", 255, 0, 30000000]
 ]`
 
-	store, err = tack.NewDefaultStoreFromJSON(s)
-	if _, ok := err.(tack.PinListError); !ok {
+	store, err = NewDefaultStoreFromJSON(s)
+	if _, ok := err.(PinListError); !ok {
 		test.Fatal("wrong error for pin store")
 	}
 }

@@ -14,7 +14,7 @@ import (
 	"errors"
 	"io"
 	"strconv"
-	"tackgo/tack"
+	"tack"
 )
 
 func (c *Conn) clientHandshake() error {

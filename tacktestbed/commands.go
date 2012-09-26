@@ -1,4 +1,4 @@
-package commands
+package main
 
 import (
 	"os"
@@ -9,8 +9,8 @@ import (
 	"log"
 	"io"
 	"time"
-	"tackgo/tls"
-	"tackgo/tack"
+	"tacktls"
+	"tack"
 )
 
 func PrintGeneralUsage(message string) {
