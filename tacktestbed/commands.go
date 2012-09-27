@@ -1,6 +1,8 @@
 package main
 
 import (
+	"crypto/sha256"
+	"crypto/x509"
 	"os"
 	"fmt"
 	"flag"
@@ -52,12 +54,10 @@ func Client(args []string) {
 
 func Server(args [] string) error {
 
+	// Parse cmdline args
 	flagSet := flag.NewFlagSet("", flag.ExitOnError)
-
 	certFile := flagSet.String("c", "", "X.509 certificate (PEM)")
 	keyFile := flagSet.String("k", "", "Private key (PEM)")
-	tackExtFile := flagSet.String("e", "", "TackExtension")
-
 	err := flagSet.Parse(args)
 	if err != nil || *certFile == "" || *keyFile == "" || len(flagSet.Args()) != 0 {
 		fmt.Fprintf(os.Stderr, "Usage of %s:\n", os.Args[0])
@@ -65,39 +65,50 @@ func Server(args [] string) error {
 		os.Exit(1)
 	}
 
+	// Run the servers with "talkChan" connecting them
 	talkChan := make(chan string)
-
-	go tlsServer(certFile, keyFile, tackExtFile, talkChan)
+	go tlsServer(certFile, keyFile, talkChan)
 	log.Println("TLS Server launched on 8443")
 
 	go httpServer(talkChan)
 	log.Println("HTTP Server launched on 8080")
 
+	// Wait endlessly
 	endChan := make(chan int)
-	_ = <- endChan // Wait endlessly for goroutines
+	_ = <- endChan
 
 	return nil
 }
 
-func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan string) {
+func tlsServer(certFile, keyFile *string, talkChan chan string) {
 
+	// Load X.509 certificates and key
 	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
 	if (err != nil) {log.Fatal(err)}
 	
-	f, err := os.Open(*tackExtFile)
-	if err != nil {log.Fatal(err)}
+	hashAlg := sha256.New()
+	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	if err != nil {
+		panic("")
+	}
 
-	tackExtBytes := make([]byte, 1024)
-	nbytes, err := f.Read(tackExtBytes)
-	if err != nil {log.Fatal(err)}
+	// Calculate targetHash
+	hashAlg.Write(leaf.RawSubjectPublicKeyInfo)
+	targetHash := hashAlg.Sum(nil)
 
-	tackExt, err := tack.NewTackExtensionFromPem(string(tackExtBytes[:nbytes])) 
-	if err != nil {log.Fatal(err)}
+	// Initialize pinState and get first tack
+	pinState := NewPinState()
+	t := pinState.new(targetHash)
+
+	// Create TackExtension and tls.Config
+	tackExt, err := tack.NewTackExtension([]*tack.Tack{t}, 1)
+	if (err != nil) {panic("")}
 
 	config := tls.Config{}
 	config.Certificates = []tls.Certificate{cert}
 	config.TackExtension = tackExt
 
+	// Listen for new connection
 	tcpListener, err:= net.ListenTCP("tcp4", &net.TCPAddr{net.IPv4(127,0,0,1), 8443})
 	if err != nil {log.Fatal(err)}
 	tlsListener := tls.NewListener(tcpListener, &config)
@@ -114,8 +125,17 @@ func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan string) {
 			case s := <-talkChan:
 				fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", s)
 				if s == "next" {
+
+					// If we got a "next" request, move to next PinState
+					// and get new TackExtension, and listen again
+					t = pinState.next(targetHash)
+					tackExt, err = tack.NewTackExtension([]*tack.Tack{t}, 1)
+					if (err != nil) {panic(err.Error())}
+
 					config = tls.Config{}
 					config.Certificates = []tls.Certificate{cert}
+					config.TackExtension = tackExt
+					
 					tlsListener = tls.NewListener(tcpListener, &config)
 					talkChan <- "done"
 				}
@@ -124,7 +144,7 @@ func tlsServer(certFile, keyFile, tackExtFile *string, talkChan chan string) {
 			continue;
 		}
 		
-		// Run a goroutine to handle the new connection
+		// Run a goroutine to echo data on the new connection
 		go func(c net.Conn) {
 			io.Copy(c, c)
 			c.Close()
