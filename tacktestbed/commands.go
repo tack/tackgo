@@ -59,7 +59,8 @@ func Server(args [] string) error {
 
 	// Run the servers with "talkChan" connecting them
 	talkChan := make(chan string)
-	go tlsServer(certFile, keyFile, talkChan)
+	tlsServer := NewTlsServer(certFile, keyFile, talkChan)
+	go tlsServer.run()
 	log.Println("TLS Server launched on 8443")
 
 	go httpServer(talkChan)

@@ -29,7 +29,7 @@ func NewPinState() *PinState{
 	state := PinState{}
 	var err error
 	state.privKey, err = ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
-	if (err != nil) { panic("")}
+	if (err != nil) { panic(err.Error())}
 	state.publicKey = make([]byte, 64)
 	x, y := state.privKey.X, state.privKey.Y
 	xBytes := x.Bytes()
@@ -43,9 +43,9 @@ func NewPinState() *PinState{
 
 func (state* PinState) new(targetHash []byte) *tack.Tack {
 
-	tack, err := tack.NewTack(state.publicKey, state.minGeneration, 0, 0, 
+	tack, err := tack.NewTack(state.publicKey, state.minGeneration, state.minGeneration, 0, 
 		targetHash, make([]byte, 64)) 
-	if (err!=nil) { panic("")}
+	if (err!=nil) { panic(err.Error())}
 	tack.Sign(state.privKey)		
 	return tack
 }
