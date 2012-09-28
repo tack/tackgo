@@ -4,16 +4,17 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"tack"
 	"tacktls"
 )
 
 type TestClient struct { 
-
+	store *tack.DefaultStore
 }
 
 
 func NewTestClient() *TestClient {
-	return &TestClient{}
+	return &TestClient{&tack.DefaultStore{}}
 }
 
 func (client *TestClient) run() {
@@ -37,6 +38,10 @@ func (client *TestClient) run() {
 		} else {
 			fmt.Println("No Tack Extension")
 		}
+
+		status, err := tack.ProcessStore(client.store, connState.TackExtension, 
+			"localhost", 100)
+		fmt.Printf("Status = %s, err = %v\n", status.String(), err)
 
 		// Make HTTP request
 		_, err = http.Get("http://localhost:8080/next")

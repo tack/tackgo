@@ -8,6 +8,15 @@ const (
 	REJECTED
 )
 
+func (status Status) String() string {
+	switch (status) {
+	case UNPINNED: return "unpinned"
+	case ACCEPTED: return "accepted"
+	case REJECTED: return "rejected"
+	}
+	return "unknown?!"
+}
+
 func ProcessStore(store PinStore, tackExt *TackExtension, name string,
 	currentTime uint32) (status Status, err error) {
 
