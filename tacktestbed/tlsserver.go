@@ -3,8 +3,6 @@ package main
 import (
 	"crypto/sha256"
 	"crypto/x509"
-	"os"
-	"fmt"
 	"net"
 	"log"
 	"io"
@@ -72,15 +70,15 @@ func (tlsServer *TlsServer) run() {
 	tlsServer.listen()
 	for {
 		// Wait for a new connection 
-		tlsServer.tcpListener.SetDeadline(time.Now().Add(time.Second))
+		tlsServer.tcpListener.SetDeadline(time.Now().Add(time.Millisecond))
 		conn, err := tlsServer.listener.Accept()
 
-		// If the call returned with err it could b a timeout, check whether
-		// a talkChan message has arrived
+		// If the call returned with err it's probably a timeout, check whether
+		// a talkChan message has arrived, then continue waiting for a connection
 		if err != nil {
 			select {
 			case s := <- tlsServer.talkChan:
-				fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", s)
+				//fmt.Fprintf(os.Stderr, "tlsServer channel response %v\n", s)
 				if s == "next" {
 					tlsServer.reListen(false)
 					tlsServer.talkChan <- "done"
@@ -93,7 +91,7 @@ func (tlsServer *TlsServer) run() {
 			continue;
 		}
 		
-		// Run a goroutine to echo data on the new connection
+		// No error: Run a goroutine to echo data on the new connection
 		go func(c net.Conn) {
 			io.Copy(c, c)
 			c.Close()

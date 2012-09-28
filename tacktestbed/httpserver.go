@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"os"
 	"net/http"
 )
 
@@ -13,13 +12,11 @@ func httpServer(talkChan chan string) {
 		switch (request) {
 		case "new":
 			talkChan <- "new"
-			s := <- talkChan
-			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", s)
+			_ = <- talkChan
 			fmt.Fprintf(w, "OK new")
 		case "next":
 			talkChan <- "next"
-			s := <- talkChan
-			fmt.Fprintf(os.Stderr, "httpServer channel response %v\n", s)
+			_ = <- talkChan
 			fmt.Fprintf(w, "OK next")
 		default:
 			fmt.Fprintf(w, "Hi there, I don't know \"%s\"!", request)

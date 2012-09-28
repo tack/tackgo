@@ -25,23 +25,9 @@ Commands (use "help <command>" to see optional args):
 }
 
 func Client(args []string) {
-	config := tls.Config{}
-	config.Tack = true
-	config.InsecureSkipVerify = true
 
-	conn, err := tls.Dial("tcp", "test.tack.io:443", &config)
-	if err != nil {log.Fatal(err)}
-
-	err = conn.Handshake()
-	if err != nil {log.Fatal(err)}
-
-	connState := conn.ConnectionState()
-	if connState.TackExtension != nil {
-		te := connState.TackExtension
-		fmt.Println(te)
-	} else {
-		fmt.Println("No Tack Extension")
-	}
+	testClient := NewTestClient()
+	testClient.run()
 }
 
 func Server(args [] string) error {

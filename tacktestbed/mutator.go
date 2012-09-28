@@ -43,7 +43,7 @@ func NewPinState() *PinState{
 
 func (state* PinState) new(targetHash []byte) *tack.Tack {
 
-	tack, err := tack.NewTack(state.publicKey, state.minGeneration, state.minGeneration, 0, 
+	tack, err := tack.NewTack(state.publicKey, state.minGeneration, state.minGeneration, 0xFFFFFFFF, 
 		targetHash, make([]byte, 64)) 
 	if (err!=nil) { panic(err.Error())}
 	tack.Sign(state.privKey)		
@@ -74,7 +74,7 @@ func (state* PinState) next(targetHash []byte) *tack.Tack {
 	case 3: generation = uint8(randRange(int(state.minGeneration), 255))
 	}
 	
-	tack, err := tack.NewTack(state.publicKey, state.minGeneration, generation, 0, 
+	tack, err := tack.NewTack(state.publicKey, state.minGeneration, generation, 0xFFFFFFFF, 
 		targetHash, make([]byte, 64)) 
 	if (err!=nil) { panic("")}
 	tack.Sign(state.privKey)		
