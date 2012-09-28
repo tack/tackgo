@@ -14,7 +14,7 @@ type TestClient struct {
 
 
 func NewTestClient() *TestClient {
-	return &TestClient{&tack.DefaultStore{}}
+	return &TestClient{tack.NewDefaultStore(true)}
 }
 
 func (client *TestClient) run() {
@@ -42,6 +42,7 @@ func (client *TestClient) run() {
 		status, err := tack.ProcessStore(client.store, connState.TackExtension, 
 			"localhost", 100)
 		fmt.Printf("Status = %s, err = %v\n", status.String(), err)
+		fmt.Printf("Pinlist =\n%v\n", client.store.String())
 
 		// Make HTTP request
 		_, err = http.Get("http://localhost:8080/next")

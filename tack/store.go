@@ -31,6 +31,14 @@ type DefaultStore struct {
 	pins          map[string][]*Pin        // names -> Pins
 }
 
+func NewDefaultStore(pinActivation bool) *DefaultStore {
+	store := &DefaultStore{}
+	store.PinActivation = pinActivation
+	store.keys = make(map[KeyFingerprint]uint8)
+	store.pins = make(map[string][]*Pin)
+	return store
+}
+
 func (store *DefaultStore) GetPinActivation() bool {
 	return store.PinActivation
 }
