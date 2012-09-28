@@ -13,14 +13,15 @@ import (
 
 type TlsServer struct { 
 	cert tls.Certificate
-	targetHash []byte
 	pinState *PinState
 	talkChan chan string
+	dataChan chan uint32
 	listener net.Listener
 	tcpListener *net.TCPListener
 }
 
-func NewTlsServer(certFile, keyFile *string, talkChan chan string) *TlsServer {
+func NewTlsServer(certFile, keyFile *string, talkChan chan string, 
+	dataChan chan uint32) *TlsServer {
 	// Load X.509 certificates and key
 	cert, err := tls.LoadX509KeyPair(*certFile, *keyFile)
 	if (err != nil) {log.Fatal(err)}
@@ -34,7 +35,8 @@ func NewTlsServer(certFile, keyFile *string, talkChan chan string) *TlsServer {
 	hashAlg.Write(leaf.RawSubjectPublicKeyInfo)
 
 	// Return new TlsServer
-	tlsServer := TlsServer{cert, hashAlg.Sum(nil), NewPinState(), talkChan, nil, nil}
+	tlsServer := TlsServer{cert, NewPinState(hashAlg.Sum(nil)), talkChan, dataChan, 
+		nil, nil}
 	return &tlsServer
 }
 
@@ -48,15 +50,13 @@ func (tlsServer *TlsServer) listen() {
 
 func (tlsServer *TlsServer) reListen(newTest bool) {
 	// Create TackExtension and tls.Config
-	var t *tack.Tack
 	if newTest {
-		tlsServer.pinState = NewPinState()
-		t = tlsServer.pinState.new(tlsServer.targetHash)
+		tlsServer.pinState = NewPinState(tlsServer.pinState.targetHash)
 	} else {
-		t = tlsServer.pinState.next(tlsServer.targetHash)
+		tlsServer.pinState.next()
 	}
 
-	tackExt, err := tack.NewTackExtension([]*tack.Tack{t}, 1)
+	tackExt, err := tack.NewTackExtension([]*tack.Tack{tlsServer.pinState.tack}, 1)
 	if (err != nil) {panic(err.Error())}
 
 	config := tls.Config{}
@@ -82,9 +82,11 @@ func (tlsServer *TlsServer) run() {
 				if s == "next" {
 					tlsServer.reListen(false)
 					tlsServer.talkChan <- "done"
+					tlsServer.dataChan <- tlsServer.pinState.currentTime
 				} else if s == "new" {
 					tlsServer.reListen(true)
 					tlsServer.talkChan <- "done"
+					tlsServer.dataChan <- tlsServer.pinState.currentTime
 				}
 			default:
 			}

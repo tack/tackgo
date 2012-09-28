@@ -8,28 +8,36 @@ import (
 	"tack"
 )
 
-type PinState struct {
-	initialTime uint32
-	endTime uint32
-	minGeneration uint8
-	publicKey []byte
-	privKey *ecdsa.PrivateKey
-}
-
-type HostState struct {
-	name string
-	pinStates []PinState
-}
-
 func randRange(min int, max int) int {
 	return min + rand.Intn(max + 1 - min)
 }
 
-func NewPinState() *PinState{
+type PinState struct {
+	//initialTime uint32
+	//endTime uint32
+
+	privKey *ecdsa.PrivateKey
+	publicKey []byte
+
+	minGeneration uint8	
+	generation uint8
+	expirationTime uint32
+	targetHash []byte
+
+	currentTime uint32
+
+	tack *tack.Tack
+}
+
+func NewPinState(targetHash []byte) *PinState{
 	state := PinState{}
 	var err error
+
+	// Generate private key
 	state.privKey, err = ecdsa.GenerateKey(elliptic.P256(), crand.Reader)
 	if (err != nil) { panic(err.Error())}
+
+	// Populate public key
 	state.publicKey = make([]byte, 64)
 	x, y := state.privKey.X, state.privKey.Y
 	xBytes := x.Bytes()
@@ -38,19 +46,27 @@ func NewPinState() *PinState{
 	yPad := tack.PUBKEY_LENGTH/2 - len(yBytes)
 	copy(state.publicKey[xPad : tack.PUBKEY_LENGTH/2], xBytes)
 	copy(state.publicKey[tack.PUBKEY_LENGTH/2+yPad : ], yBytes)
+
+	// Initialize other vars
+	state.minGeneration = 0
+	state.generation = 0
+	state.currentTime = 123
+	state.expirationTime = 30000000
+	state.targetHash = targetHash
+	state.createTack()
+
 	return &state
 }
 
-func (state* PinState) new(targetHash []byte) *tack.Tack {
-
-	tack, err := tack.NewTack(state.publicKey, state.minGeneration, state.minGeneration, 0xFFFFFFFF, 
-		targetHash, make([]byte, 64)) 
+func (state* PinState) createTack() {
+	tack, err := tack.NewTack(state.publicKey, state.minGeneration, state.generation, 
+		state.expirationTime, state.targetHash, make([]byte, 64)) 
 	if (err!=nil) { panic(err.Error())}
-	tack.Sign(state.privKey)		
-	return tack
+	tack.Sign(state.privKey)
+	state.tack = tack
 }
 
-func (state* PinState) next(targetHash []byte) *tack.Tack {
+func (state* PinState) next() {
 	diceToss := randRange(1,3)
 	switch (diceToss) {
 	case 1: break
@@ -62,23 +78,18 @@ func (state* PinState) next(targetHash []byte) *tack.Tack {
 	}
 
 	diceToss = randRange(1,3)
-	var generation uint8
 	switch (diceToss) {
-	case 1: generation = state.minGeneration
+	case 1: state.generation = state.minGeneration
 	case 2: 
 		if state.minGeneration < 255 {
-			generation = state.minGeneration + 1
+			state.generation = state.minGeneration + 1
 		} else {
-			generation = state.minGeneration
+			state.generation = state.minGeneration
 		}
-	case 3: generation = uint8(randRange(int(state.minGeneration), 255))
+	case 3: state.generation = uint8(randRange(int(state.minGeneration), 255))
 	}
 	
-	tack, err := tack.NewTack(state.publicKey, state.minGeneration, generation, 0xFFFFFFFF, 
-		targetHash, make([]byte, 64)) 
-	if (err!=nil) { panic("")}
-	tack.Sign(state.privKey)		
-	return tack
+	state.createTack()
 }
 
 /*
