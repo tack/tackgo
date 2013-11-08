@@ -5,7 +5,7 @@ import (
 	"crypto/elliptic"
 	crand "crypto/rand"
 	"math/rand"
-	"tack"
+	"github.com/tack/tackgo/tack"
 )
 
 func randRange(min int, max int) int {

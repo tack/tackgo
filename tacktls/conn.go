@@ -16,7 +16,7 @@ import (
 	"net"
 	"sync"
 	"time"
-	"tack"
+	"github.com/tack/tackgo/tack"
 )
 
 // A Conn represents a secured connection.

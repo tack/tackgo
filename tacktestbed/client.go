@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"tack"
-	"tacktls"
+	"github.com/tack/tackgo/tack"
+	"github.com/tack/tackgo/tacktls"
 )
 
 type TestClient struct { 
