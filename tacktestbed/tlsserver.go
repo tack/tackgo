@@ -43,7 +43,7 @@ func NewTlsServer(certFile, keyFile *string, talkChan chan string,
 func (tlsServer *TlsServer) listen() {
 	var err error
 	tlsServer.tcpListener, err = net.ListenTCP("tcp4", 
-			&net.TCPAddr{net.IPv4(127,0,0,1), 8443})
+			&net.TCPAddr{IP: net.IPv4(127,0,0,1), Port: 8443})
 	if err != nil {panic(err.Error())}
 	tlsServer.reListen(true)
 }
