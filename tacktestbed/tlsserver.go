@@ -7,8 +7,8 @@ import (
 	"log"
 	"io"
 	"time"
-	"tacktls"
-	"tack"
+	"github.com/tack/tackgo/tacktls"
+	"github.com/tack/tackgo/tack"
 )
 
 type TlsServer struct { 
